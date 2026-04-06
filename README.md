@@ -88,6 +88,39 @@ will be under construction over the next few weeks to
 -   [Install Jax](https://docs.jax.dev/en/latest/installation.html#installation)
     for Flax.
 
+### GitHub Copilot Setup
+
+This repository already includes GitHub Copilot customization files:
+
+-   `.github/copilot-instructions.md` for repository-wide instructions.
+-   `AGENTS.md` for always-on agent guidance.
+-   `timesfm-forecasting/` for the reusable TimesFM skill.
+
+Open the repository root in VS Code so Copilot can discover those files
+automatically. You do not need to copy `.github/copilot-instructions.md` or
+`AGENTS.md` anywhere else.
+
+GitHub Copilot discovers project skills from `.github/skills/` and user skills
+from `~/.copilot/skills/`. To make the packaged TimesFM skill available in
+Copilot agent mode, install it into one of those locations:
+
+```shell
+# Project-local
+mkdir -p .github/skills
+cp -r timesfm-forecasting .github/skills/
+
+# Or user-local
+mkdir -p ~/.copilot/skills
+cp -r timesfm-forecasting ~/.copilot/skills/
+```
+
+After that, start a Copilot Chat session in agent mode and ask it to use the
+`timesfm-forecasting` skill.
+
+If you open a subfolder instead of the repository root, enable the VS Code
+setting `chat.useCustomizationsInParentRepositories` so Copilot can still
+discover the repo-level instructions and skills.
+
 ### Code Example
 
 ```python
