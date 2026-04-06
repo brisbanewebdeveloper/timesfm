@@ -15,6 +15,7 @@
 """TimesFM API."""
 
 from .configs import ForecastConfig
+from .service_models import ForecastRequest, ForecastResponse, HealthResponse, SeriesForecast
 
 try:
   from .timesfm_2p5 import timesfm_2p5_torch

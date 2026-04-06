@@ -1,0 +1,66 @@
+services:
+  timesfm:
+    container_name: timesfm
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    environment:
+      HF_HOME: /data/huggingface
+      PYTHONUNBUFFERED: "1"
+      PYTORCH_CUDA_ALLOC_CONF: expandable_segments:True
+      TIMESFM_MAX_CONTEXT: "512"
+      TIMESFM_PER_CORE_BATCH_SIZE: "4"
+    ports:
+      - "${TIMESFM_PORT:-8000}:8000"
+    volumes:
+      - timesfm-hf-cache:/data/huggingface
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5).read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  timesfm-mcp:
+    container_name: timesfm-mcp
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["timesfm-mcp"]
+    restart: unless-stopped
+    depends_on:
+      timesfm:
+        condition: service_healthy
+    environment:
+      PYTHONUNBUFFERED: "1"
+      TIMESFM_API_BASE_URL: http://timesfm:8000
+      TIMESFM_MCP_PORT: "8001"
+    ports:
+      - "${TIMESFM_MCP_PORT:-8001}:8001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=5).read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  timesfm-hf-cache:

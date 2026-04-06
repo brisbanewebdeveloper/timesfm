@@ -63,12 +63,18 @@ will be under construction over the next few weeks to
     ```shell
     # Create a virtual environment
     uv venv
-    
+
     # Activate the environment
     source .venv/bin/activate
-    
+
     # Install the package in editable mode with torch
     uv pip install -e .[torch]
+    # Or with the REST API runtime
+    uv pip install -e .[service]
+    # Or with the MCP proxy runtime
+    uv pip install -e .[mcp]
+    # Or install everything needed for torch inference + both servers
+    uv pip install -e .[torch,service,mcp]
     # Or with flax
     uv pip install -e .[flax]
     # Or XReg is needed
@@ -114,3 +120,88 @@ point_forecast, quantile_forecast = model.forecast(
 point_forecast.shape  # (2, 12)
 quantile_forecast.shape  # (2, 12, 10): mean, then 10th to 90th quantiles.
 ```
+
+### Local Servers
+
+Run the existing REST API:
+
+```shell
+timesfm-api
+```
+
+The REST API defaults to `http://127.0.0.1:8000` and still supports the same
+`curl` workflow:
+
+```shell
+curl http://127.0.0.1:8000/health
+
+curl -X POST http://127.0.0.1:8000/forecast \
+    -H 'Content-Type: application/json' \
+    -d '{
+         "horizon": 12,
+         "series_names": ["demo"],
+         "inputs": [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]
+    }'
+```
+
+Run the MCP proxy in a second process:
+
+```shell
+TIMESFM_API_BASE_URL=http://127.0.0.1:8000 timesfm-mcp
+```
+
+The MCP endpoint is exposed at `http://127.0.0.1:8001/mcp` by default. The MCP
+server wraps the existing REST API; it does not replace it.
+
+`AGENTS.md` and `timesfm-forecasting/SKILL.md` describe agent-skill packaging.
+The MCP server is a separate runtime surface exposed by `timesfm-mcp`.
+
+### Docker Compose Services
+
+The repository also includes a minimal long-running REST API service and an MCP
+proxy service backed by Docker Compose.
+
+The default compose settings are conservative for shared GPUs: `max_context=512`
+and `per_core_batch_size=4`. Increase them in `docker-compose.yml` if you have
+more free VRAM.
+
+The published host ports are controlled through `.env`:
+
+```shell
+TIMESFM_PORT=8000
+TIMESFM_MCP_PORT=8001
+```
+
+1. Build and start both services:
+    ```shell
+    docker compose up --build -d
+    ```
+
+2. Check REST API health:
+    ```shell
+    curl http://localhost:${TIMESFM_PORT}/health
+    ```
+
+3. Send a forecast request with `curl`:
+    ```shell
+    curl -X POST http://localhost:${TIMESFM_PORT}/forecast \
+      -H 'Content-Type: application/json' \
+      -d '{
+         "horizon": 12,
+         "series_names": ["demo"],
+         "inputs": [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]
+      }'
+    ```
+
+4. Connect an MCP client to the proxy endpoint:
+    ```shell
+    echo "MCP endpoint: http://localhost:${TIMESFM_MCP_PORT}/mcp"
+    ```
+
+The compose setup keeps TimesFM inference inside the REST container. The MCP
+container only forwards validated tool calls to `timesfm`, so you can keep the
+existing `curl` workflow while exposing the same forecast capability to MCP
+clients.
+
+The REST container persists Hugging Face downloads in a named volume mounted at
+`$HF_HOME`, so the first model download is reused across restarts.

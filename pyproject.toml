@@ -18,9 +18,23 @@ dependencies = [
     "safetensors>=0.5.3",
 ]
 
+[project.scripts]
+timesfm-api = "timesfm.api:main"
+timesfm-mcp = "timesfm.mcp_server:main"
+
 [project.optional-dependencies]
 torch = [
     "torch>=2.0.0",
+]
+service = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.32.0",
+]
+mcp = [
+    "fastapi>=0.115.0",
+    "httpx>=0.28.0",
+    "mcp>=1.27.0",
+    "uvicorn>=0.32.0",
 ]
 flax = [
     "flax",

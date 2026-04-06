@@ -28,6 +28,13 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from timesfm.service_runtime import (
+    RuntimeSettings,
+    format_named_forecasts,
+    forecast_arrays,
+    load_torch_model,
+)
+
 
 def run_preflight() -> dict:
     """Run the system preflight check and return the report."""
@@ -48,31 +55,9 @@ def run_preflight() -> dict:
 
 def load_model(batch_size: int = 32):
     """Load and compile the TimesFM model."""
-    import torch
-    import timesfm
-
-    torch.set_float32_matmul_precision("high")
-
     print("Loading TimesFM 2.5 from Hugging Face...")
-    model = timesfm.TimesFM_2p5_200M_torch.from_pretrained(
-        "google/timesfm-2.5-200m-pytorch"
-    )
-
     print(f"Compiling with per_core_batch_size={batch_size}...")
-    model.compile(
-        timesfm.ForecastConfig(
-            max_context=1024,
-            max_horizon=256,
-            normalize_inputs=True,
-            use_continuous_quantile_head=True,
-            force_flip_invariance=True,
-            infer_is_positive=True,
-            fix_quantile_crossing=True,
-            per_core_batch_size=batch_size,
-        )
-    )
-
-    return model
+    return load_torch_model(RuntimeSettings(per_core_batch_size=batch_size))
 
 
 def load_csv(
@@ -125,20 +110,8 @@ def forecast_series(
         inputs.append(values)
 
     print(f"Forecasting {len(inputs)} series with horizon={horizon}...")
-    point, quantiles = model.forecast(horizon=horizon, inputs=inputs)
-
-    results = {}
-    for i, col in enumerate(value_cols):
-        results[col] = {
-            "forecast": point[i].tolist(),
-            "lower_90": quantiles[i, :, 1].tolist(),  # 10th percentile
-            "lower_80": quantiles[i, :, 2].tolist(),  # 20th percentile
-            "median": quantiles[i, :, 5].tolist(),  # 50th percentile
-            "upper_80": quantiles[i, :, 8].tolist(),  # 80th percentile
-            "upper_90": quantiles[i, :, 9].tolist(),  # 90th percentile
-        }
-
-    return results
+    point, quantiles = forecast_arrays(model, inputs, horizon)
+    return format_named_forecasts(value_cols, point, quantiles)
 
 
 def write_csv_output(
