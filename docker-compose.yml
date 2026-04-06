@@ -14,6 +14,7 @@ services:
               capabilities: [gpu]
     environment:
       HF_HOME: /data/huggingface
+      HF_TOKEN: ${HF_TOKEN}
       PYTHONUNBUFFERED: "1"
       PYTORCH_CUDA_ALLOC_CONF: expandable_segments:True
       TIMESFM_MAX_CONTEXT: "512"

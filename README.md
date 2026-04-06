@@ -69,7 +69,7 @@ will be under construction over the next few weeks to
 
     # Install the package in editable mode with torch
     uv pip install -e .[torch]
-    # Or with the REST API runtime
+    # Or with the REST API framework (combine with a backend like torch to serve forecasts)
     uv pip install -e .[service]
     # Or with the MCP proxy runtime
     uv pip install -e .[mcp]
@@ -128,6 +128,8 @@ Run the existing REST API:
 ```shell
 timesfm-api
 ```
+
+Install a backend such as `.[torch,service]` before starting the REST API.
 
 The REST API defaults to `http://127.0.0.1:8000` and still supports the same
 `curl` workflow:
