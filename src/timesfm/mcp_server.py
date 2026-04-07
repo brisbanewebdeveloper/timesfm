@@ -71,16 +71,28 @@ class ProxyHealthResponse(BaseModel):
 
 _proxy_runtime: ProxyRuntime | None = None
 
-mcp = FastMCP(
-  "TimesFM",
-  instructions=(
-    "Use the forecast tool to obtain TimesFM forecasts through the existing "
-    "HTTP API."
-  ),
-  json_response=True,
-  stateless_http=True,
-  streamable_http_path="/",
-)
+
+def _default_mcp_host() -> str:
+  """Returns the MCP bind host used for transport configuration."""
+  return os.getenv("TIMESFM_MCP_HOST", ProxySettings.host)
+
+
+def _create_mcp_server(host: str | None = None) -> FastMCP:
+  """Builds the MCP server with transport settings aligned to the bind host."""
+  return FastMCP(
+    "TimesFM",
+    instructions=(
+      "Use the forecast tool to obtain TimesFM forecasts through the existing "
+      "HTTP API."
+    ),
+    host=host or _default_mcp_host(),
+    json_response=True,
+    stateless_http=True,
+    streamable_http_path="/",
+  )
+
+
+mcp = _create_mcp_server()
 
 
 def _load_proxy_settings() -> ProxySettings:

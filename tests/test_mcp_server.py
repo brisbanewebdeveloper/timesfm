@@ -7,6 +7,22 @@ from timesfm import mcp_server
 from timesfm.service_models import ForecastResponse
 
 
+def test_create_mcp_server_defaults_to_bind_host_without_localhost_only_security() -> None:
+  server = mcp_server._create_mcp_server(host="0.0.0.0")
+
+  assert server.settings.host == "0.0.0.0"
+  assert server.settings.transport_security is None
+
+
+def test_create_mcp_server_keeps_localhost_transport_protection() -> None:
+  server = mcp_server._create_mcp_server(host="127.0.0.1")
+
+  assert server.settings.host == "127.0.0.1"
+  assert server.settings.transport_security is not None
+  assert server.settings.transport_security.enable_dns_rebinding_protection is True
+  assert "127.0.0.1:*" in server.settings.transport_security.allowed_hosts
+
+
 def _runtime_with_transport(
   monkeypatch: pytest.MonkeyPatch,
   transport: httpx.BaseTransport,

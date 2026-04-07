@@ -188,6 +188,23 @@ TIMESFM_API_BASE_URL=http://127.0.0.1:8000 timesfm-mcp
 The MCP endpoint is exposed at `http://127.0.0.1:8001/mcp` by default. The MCP
 server wraps the existing REST API; it does not replace it.
 
+To register that MCP proxy in VS Code, add this to `.vscode/mcp.json` in the
+workspace or to your user `mcp.json`:
+
+```json
+{
+    "servers": {
+        "timesfm": {
+            "type": "http",
+            "url": "http://127.0.0.1:8001/mcp"
+        }
+    }
+}
+```
+
+Start `timesfm-mcp` before using the server from Copilot Chat so VS Code can
+discover its tools.
+
 `AGENTS.md` and `timesfm-forecasting/SKILL.md` describe agent-skill packaging.
 The MCP server is a separate runtime surface exposed by `timesfm-mcp`.
 
