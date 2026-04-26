@@ -16,9 +16,11 @@ __pycache__/
 .mypy_cache/
 .pytest_cache/
 .ruff_cache/
+*.egg-info/
 checkpoints/
 wandb/
 datasets/
 results/
-*.egg-info/
+uv.lock
 development_setup.md
+debug.log
